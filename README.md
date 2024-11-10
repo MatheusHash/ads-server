@@ -56,6 +56,7 @@ Este projeto é um sistema de exibição de anúncios personalizados com base na
 
 - Com base nas preferências, o servidor escolhe um anúncio da categoria correspondente. Em caso de ausência de preferência, a seleção pode ser feita de forma aleatória ou por rotação.
 
+
 ### 4. Sistema de Relatórios
 
 - Implementação de contagem simples de quantas vezes cada anúncio foi exibido e quantos cliques foram registrados.
