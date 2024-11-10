@@ -4,9 +4,12 @@ import (
 	"ad-server/internal/database"
 	"database/sql"
 	"encoding/json"
+	"strconv"
 
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 // Estrutura para receber os dados do anúncio
@@ -63,6 +66,38 @@ func GetAd(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(ad)
 }
 
+// Função para buscar um anúncio pelo ID (slug)
+func GetAdById(w http.ResponseWriter, r *http.Request) {
+	// Pegar o 'slug' (ID) da URL
+	vars := mux.Vars(r)
+	slug := vars["slug"]
+
+	// Converter o 'slug' para um número inteiro (ID)
+	adID, err := strconv.Atoi(slug)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	var ad Ad
+
+	// Buscar o anúncio pelo ID no banco de dados
+	row := database.DB.QueryRow("SELECT id, category, content, impressions FROM ads WHERE id = ?", adID)
+	if err := row.Scan(&ad.ID, &ad.Category, &ad.Content, &ad.Impressions); err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Anúncio não encontrado", http.StatusNotFound)
+			return
+		}
+		log.Printf("Erro ao buscar anúncio: %v", err)
+		http.Error(w, "Erro ao buscar anúncio", http.StatusInternalServerError)
+		return
+	}
+
+	// Retornar o anúncio em formato JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ad)
+}
+
 // Endpoint para criar um novo anúncio
 func CreateAd(w http.ResponseWriter, r *http.Request) {
 	var adRequest CreateAdRequest
@@ -97,5 +132,33 @@ func CreateAd(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(adResponse)
+
+}
+
+type RequestBody struct {
+	AdId int `json:"adId"`
+}
+
+// Endpoint para registrar um click em um anúncio
+func RegisterClick(w http.ResponseWriter, r *http.Request) {
+	var body RequestBody
+	log.Println("body", body)
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, "Dados inválidos", http.StatusBadRequest)
+		return
+	}
+	adId := body.AdId
+	// Incrementar as impressões do anúncio
+	_, err := database.DB.Exec("UPDATE ads SET impressions = impressions + 1 WHERE id = ?", adId)
+	if err != nil {
+		http.Error(w, "Erro ao registrar clique", http.StatusInternalServerError)
+		return
+	}
+
+	// Configurar o cabeçalho e enviar o anúncio em JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(
+		"Clique registrado com sucesso",
+	)
 
 }
