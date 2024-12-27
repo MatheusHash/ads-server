@@ -27,7 +27,13 @@ func main() {
 	}
 
 	// Configurar rotas
+	// accounts
+	r.HandleFunc("/account/{slug:[0-9]+}", handlers.GetAccountById).Methods("GET")
+	r.HandleFunc("/account/create", handlers.CreateAccount).Methods("POST")
+
+	// ads
 	r.HandleFunc("/ad", handlers.GetAd).Methods("GET")
+	r.HandleFunc("/ad/all", handlers.GetAllAds).Methods("GET")
 	r.HandleFunc("/ad/create", handlers.CreateAd).Methods("POST") // Novo endpoint para criar anúncio
 	r.HandleFunc("/ad/click", handlers.RegisterClick).Methods("POST")
 	r.HandleFunc("/ad/find/{slug:[0-9]+}", handlers.GetAdById).Methods("GET")
