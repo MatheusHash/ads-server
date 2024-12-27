@@ -41,7 +41,22 @@ func InitTables() error {
 	if err != nil {
 		return err
 	}
+	log.Println("Tabela `ads` verificada/criada com sucesso.")
 
-	log.Println("Tabela de anúncios verificada/criada com sucesso.")
+	createAccountsTable := `
+		CREATE TABLE IF NOT EXISTS accounts (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name VARCHAR(65) NOT NULL,
+			type TEXT CHECK(type IN ('company', 'personal'))
+		)
+	`
+
+	_, err = DB.Exec(createAccountsTable)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Tabela `accounts` verficada/criada com sucesso.")
+
 	return nil
 }

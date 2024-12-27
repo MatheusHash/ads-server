@@ -34,6 +34,47 @@ type Ad struct {
 	Impressions int    `json:"impressions"`
 }
 
+type RequestBody struct {
+	AdId int `json:"adId"`
+}
+
+func GetAllAds(w http.ResponseWriter, r *http.Request) {
+
+	var ads []Ad
+
+	rows, err := database.DB.Query("SELECT * FROM ads")
+
+	if err != nil {
+		log.Printf("Erro ao buscar anúncios: %v", err)
+		http.Error(w, "Erro ao buscar anúncios", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close() // Garante que os recursos associados ao resultado da query sejam liberados
+
+	for rows.Next() {
+		var ad Ad
+		if err := rows.Scan(&ad.ID, &ad.Category, &ad.Content, &ad.Impressions); err != nil {
+			log.Printf("Erro ao escanear anúncio: %v", err)
+			http.Error(w, "Erro ao processar anúncios", http.StatusInternalServerError)
+			return
+		}
+		ads = append(ads, ad)
+	}
+
+	// log.Println(ads)
+
+	// Verifica se houve algum erro durante a iteração
+	if err := rows.Err(); err != nil {
+		log.Printf("Erro durante a iteração: %v", err)
+		http.Error(w, "Erro ao processar resultados", http.StatusInternalServerError)
+		return
+	}
+
+	// Configurar o cabeçalho e enviar o anúncio em JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ads)
+}
+
 // Endpoint para obter um anúncio aleatório e incrementar suas impressões
 func GetAd(w http.ResponseWriter, r *http.Request) {
 	var ad Ad
@@ -133,10 +174,6 @@ func CreateAd(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(adResponse)
 
-}
-
-type RequestBody struct {
-	AdId int `json:"adId"`
 }
 
 // Endpoint para registrar um click em um anúncio
