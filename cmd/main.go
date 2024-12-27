@@ -28,6 +28,7 @@ func main() {
 
 	// Configurar rotas
 	// accounts
+	r.HandleFunc("/account/{slug:[0-9]+}", handlers.GetAccountById).Methods("GET")
 	r.HandleFunc("/account/create", handlers.CreateAccount).Methods("POST")
 
 	// ads

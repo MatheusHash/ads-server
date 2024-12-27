@@ -58,5 +58,22 @@ func InitTables() error {
 
 	log.Println("Tabela `accounts` verficada/criada com sucesso.")
 
+	createAccountAdsTable := `
+    CREATE TABLE IF NOT EXISTS account_ads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL,
+        ad_id INTEGER NOT NULL,
+        interaction_type TEXT NOT NULL CHECK(interaction_type IN ('click', 'view')),
+        interaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+        FOREIGN KEY(ad_id) REFERENCES ads(id) ON DELETE CASCADE
+    );`
+
+	_, err = DB.Exec(createAccountAdsTable)
+	if err != nil {
+		return err
+	}
+	log.Println("Tabela `account_ads` verificada/criada com sucesso.")
+
 	return nil
 }

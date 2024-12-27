@@ -2,9 +2,13 @@ package handlers
 
 import (
 	"ad-server/internal/database"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type Account struct {
@@ -63,4 +67,32 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(accountResponse)
+}
+func GetAccountById(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	slug := vars["slug"]
+
+	accountId, err := strconv.Atoi(slug)
+
+	if err != nil {
+		http.Error(w, "Erro ao conveter slug.", http.StatusInternalServerError)
+		return
+	}
+
+	var account Account
+
+	row := database.DB.QueryRow("SELECT * FROM accounts WHERE id = ?", accountId)
+
+	if err := row.Scan(&account.ID, &account.Name, &account.Type); err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Conta nao encontrada.", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Erro!", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(account)
+
 }
