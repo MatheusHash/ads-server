@@ -4,7 +4,9 @@ import (
 	"ad-server/internal/database"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strconv"
+	"time"
 
 	"log"
 	"net/http"
@@ -35,7 +37,8 @@ type Ad struct {
 }
 
 type RequestBody struct {
-	AdId int `json:"adId"`
+	AdId      int `json:"adId"`
+	AccountId int `json:"accountId"`
 }
 
 func GetAllAds(w http.ResponseWriter, r *http.Request) {
@@ -185,13 +188,23 @@ func RegisterClick(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	adId := body.AdId
+	accountId := body.AccountId
 	// Incrementar as impressões do anúncio
 	_, err := database.DB.Exec("UPDATE ads SET impressions = impressions + 1 WHERE id = ?", adId)
 	if err != nil {
 		http.Error(w, "Erro ao registrar clique", http.StatusInternalServerError)
 		return
 	}
+	currentTime := time.Now().Format("2006-01-02 15:04:05") // Formato padrão ISO 8601
 
+	result, err := database.DB.Exec("INSERT INTO account_ads (account_id, ad_id, interaction_type, interaction_date) VALUES (?, ?, ?, ?)", accountId, adId, "click", currentTime)
+
+	if err != nil {
+		log.Printf("Erro ao relacionar click: %v", err)
+		http.Error(w, "Erro!", http.StatusInternalServerError)
+		return
+	}
+	fmt.Println(result)
 	// Configurar o cabeçalho e enviar o anúncio em JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(
